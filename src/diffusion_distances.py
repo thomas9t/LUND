@@ -11,9 +11,9 @@ from sklearn.metrics.pairwise import euclidean_distances
 
 
 def main():
-    # X, y = make_circles(n_samples=300, noise=0.03, factor=0.5)
+    X, y = make_circles(n_samples=300, noise=0.03, factor=0.5)
     # X, y = make_blobs(n_samples=[300,300,300])
-    X, y = make_bottleneck(100)
+    # X, y = make_bottleneck(100)
 
     sigma = 0.175
     W = kernel(X, sigma)
@@ -28,7 +28,7 @@ def main():
     (U,V) = eigs_ordered( P )
 
     # Hacky way to create an animated plot
-    t_list = [2**x for x in np.arange(np.ceil(np.log2(1e16)))]
+    t_list = [2**x for x in np.arange(np.ceil(np.log2(1e6)))]
     for t in t_list:
         D = diffusion_distances(U, V, t)
         plt.scatter(X[:,0], X[:,1], c=D[:,1], cmap=plt.cm.jet)
@@ -43,12 +43,13 @@ def main():
     for t in t_list:
         img = plt.imread("../temp/dists{}.png".format(t))
         imgs.append([plt.imshow(img)])
+        os.unlink("../temp/dists{}.png".format(t))
 
     ani = animation.ArtistAnimation(fig, imgs)
     plt.axis("off")
 
     writer = animation.PillowWriter(fps=10)
-    ani.save("../output/diffusion.gif", writer=writer)
+    ani.save("../output/diffusion_circles.gif", writer=writer)
 
 
 def make_bottleneck(N):
@@ -158,7 +159,7 @@ def lund(X, sigma, t, k, truncate=0.95, plot_stub="", bw=-1, animate_clustering=
             ixl = np.argmin(D[ix,mask])
             ixy = np.where(mask)[0][ixl]
             y_hat[ix] = y_hat[ixy]
-            if animate_clustering & (counter % 10 == 0):
+            if animate_clustering & (counter % 5 == 0):
                 plt.scatter(X[:,0], X[:,1], c=y_hat, cmap=plt.cm.Paired)
                 plt.scatter(X[ixs_dw[:k],0], X[ixs_dw[:k],1], 
                     marker="*", s=100, c="red")
@@ -171,10 +172,11 @@ def lund(X, sigma, t, k, truncate=0.95, plot_stub="", bw=-1, animate_clustering=
         fig = plt.figure()
         imgs = []
         paths = filter(lambda x: "animate" in x, os.listdir("../temp"))
-        paths.sort(key=lambda x: )
+        paths = sorted(paths, key=lambda x: int("".join(re.findall("\d", x))))
         for p in paths:
             img = plt.imread("../temp/{}".format(p))
             imgs.append([plt.imshow(img)])
+            os.unlink("../temp/{}".format(p))
         
         ani = animation.ArtistAnimation(fig, imgs)
         plt.axis("off")
