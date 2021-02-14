@@ -11,24 +11,24 @@ from sklearn.metrics.pairwise import euclidean_distances
 
 
 def main():
-    X, y = make_circles(n_samples=300, noise=0.03, factor=0.5)
-    # X, y = make_blobs(n_samples=[300,300,300])
-    # X, y = make_bottleneck(100)
-
     sigma = 0.175
+
+    # X, y = make_circles(n_samples=300, noise=0.03, factor=0.5)
+    # X, y = make_blobs(n_samples=[300,300,300])
+    
+    X, y = make_bottleneck(100)
+    animate_diffusion(X, sigma, 1e14, "_bottleneck")
+
+
+def animate_diffusion(X, sigma, t_max, stub):
     W = kernel(X, sigma)
     D = np.diag(W.sum(axis=0))
     P = np.linalg.inv(D).dot(W)
 
-    plt.scatter(X[:,0], X[:,1], c=W[:,1], cmap=plt.cm.jet)
-    plt.scatter(X[1,0], X[1,1], marker="*", s=100, c="red")
-    plt.axis("off")
-    plt.savefig("../output/kernel.png", bbox_inches="tight")
-
     (U,V) = eigs_ordered( P )
 
     # Hacky way to create an animated plot
-    t_list = [2**x for x in np.arange(np.ceil(np.log2(1e6)))]
+    t_list = [2**x for x in np.arange(np.ceil(np.log2(t_max)))]
     for t in t_list:
         D = diffusion_distances(U, V, t)
         plt.scatter(X[:,0], X[:,1], c=D[:,1], cmap=plt.cm.jet)
@@ -38,18 +38,32 @@ def main():
         plt.savefig("../temp/dists{}.png".format(t), bbox_inches="tight")
         plt.close()
 
+        plt.imshow(D, cmap="viridis")
+        plt.title("$t = 2^{{{}}}$".format(int(np.log2(t))))
+        plt.savefig("../temp/heatmap{}.png".format(t), bbox_inches="tight")
+        plt.close()
+
+    paths = ["../temp/dists{}.png".format(t) for t in t_list]
+    animation_from_imgs(paths, "../output/diffusion{}.gif".format(stub))
+
+    paths = ["../temp/heatmap{}.png".format(t) for t in t_list]
+    animation_from_imgs(paths, "../output/heatmap{}.gif".format(stub))
+
+
+def animation_from_imgs(paths, save_path):
     fig = plt.figure()
     imgs = []
-    for t in t_list:
-        img = plt.imread("../temp/dists{}.png".format(t))
+    for p in paths:
+        img = plt.imread(p)
         imgs.append([plt.imshow(img)])
-        os.unlink("../temp/dists{}.png".format(t))
+        os.unlink(p)
 
     ani = animation.ArtistAnimation(fig, imgs)
     plt.axis("off")
 
     writer = animation.PillowWriter(fps=10)
-    ani.save("../output/diffusion_circles.gif", writer=writer)
+    ani.save(save_path, writer=writer)
+    plt.close()
 
 
 def make_bottleneck(N):
@@ -123,6 +137,7 @@ def lund(X, sigma, t, k, truncate=0.95, plot_stub="", bw=-1, animate_clustering=
         plt.colorbar()
         path = "../output/kde{}.png".format(plot_stub)
         plt.savefig(path, bbox_inches="tight")
+        plt.close()
 
     (U, V) = eigs_ordered(P, truncate=truncate)
     D = diffusion_distances(U, V, t)
@@ -140,14 +155,20 @@ def lund(X, sigma, t, k, truncate=0.95, plot_stub="", bw=-1, animate_clustering=
     ixs_dw = np.argsort(-1*dw)
     ixs_px = np.argsort(-1*px)
     if plot_stub != "":
-        plt.bar(np.arange(X.shape[0]), dw, color="darkgreen")
+        plt.bar(np.arange(10*k), dw[ixs_dw][:10*k], color="darkgreen")
+        plt.yscale("log")
+        plt.ylabel("$D_{{t}}(x)$")
         path = "../output/weighted_dist_scatter{}.png".format(plot_stub)
         plt.savefig(path, bbox_inches="tight")
+        plt.close()
 
-        plt.scatter(X[:,0], X[:,1], c=dw, cmap=plt.cm.jet)
+        c = np.zeros(dw.shape[0])
+        c[dw != 0] = -1*np.log(dw[dw != 0])
+        plt.scatter(X[:,0], X[:,1], c=c, cmap=plt.cm.jet)
         plt.scatter(X[ixs_dw[:k],0], X[ixs_dw[:k],1], marker="*", s=100, c="red")
         path = "../output/weighted_dists{}.png".format(plot_stub)
         plt.savefig(path, bbox_inches="tight")
+        plt.close()
 
     counter = 0
     y_hat = np.zeros(X.shape[0])
@@ -191,3 +212,6 @@ def lund(X, sigma, t, k, truncate=0.95, plot_stub="", bw=-1, animate_clustering=
         plt.savefig(path, bbox_inches="tight")
 
     return y_hat
+
+if __name__=="__main__":
+    main()
