@@ -15,9 +15,13 @@ from sklearn.datasets import make_circles, make_blobs, make_swiss_roll
 
 def main():
     sigma = 0.175
-    X, t = make_swiss_roll(n_samples=1000)
 
-    # X, y = make_circles(n_samples=300, noise=0.03, factor=0.5)
+    X, y = make_circles(n_samples=300, noise=0.03, factor=0.5)
+    animate_diffusion(
+        X, sigma, 1e8, "_circles", plot_heatmap=True, animate=True)
+    lund(X, sigma, t=1e8, k=2, t_max=1e6,
+        plot_stub="_circles", animate_clustering=True, amimate_time_search=True)
+
     X, y = make_blobs(n_samples=[100]*16, cluster_std=0.5)
     
     X, y = make_bottleneck(100)
@@ -54,8 +58,10 @@ def animate_diffusion(X, sigma, t_max, stub, plot_heatmap=False, animate=False):
 
     # Hacky way to create an animated plot
     t = 1.0
-    paths = []
+    scatter_paths = []
+    heatmap_paths = []
     while t < t_max:
+        print(t)
         D = diffusion_distances(U, V, t)
         if X.shape[1] == 2:
             plt.scatter(X[:,0], X[:,1], c=D[:,1], cmap=plt.cm.jet)
@@ -68,31 +74,30 @@ def animate_diffusion(X, sigma, t_max, stub, plot_heatmap=False, animate=False):
             ax.scatter(X[ix,0], X[ix,1], X[ix,2], marker="*", s=100, c="red")
             ax.view_init(elev=18, azim=73)
 
-        plt.title("$t = {}$".format(int(t)))
+        plt.title("$t = 10^{{{:.3f}}}$".format(np.log10(t)))
         plt.axis("off")
         p = "../temp/dists{:.3f}.png".format(t)
-        paths.append(p)
+        scatter_paths.append(p)
         plt.savefig(p, bbox_inches="tight")
         plt.close()
 
         if plot_heatmap:
             plt.imshow(D, cmap="viridis")
-            plt.title("$t = {}".format(t))
-            plt.savefig("../temp/heatmap{}.png".format(t), bbox_inches="tight")
+            plt.title("$t = 10^{{{:.3f}}}$".format(np.log10(t)))
+            p = "../temp/heatmap{:.3f}.png".format(t)
+            plt.savefig(p, bbox_inches="tight")
+            heatmap_paths.append(p)
             plt.close()
         
-        t *= 1.3
+        t *= 1.5
 
     if animate:
-        animation_from_imgs(paths, "../output/diffusion{}.gif".format(stub))
+        animation_from_imgs(
+            scatter_paths, "../output/diffusion{}.gif".format(stub))
 
         if plot_heatmap:
-            paths = ["../temp/heatmap{}.png".format(t) for t in t_list]
-            animation_from_imgs(paths, "../output/heatmap{}.gif".format(stub))
-
-
-def logb(n, b):
-    return np.log(n) / np.log(b)
+            animation_from_imgs(
+                heatmap_paths, "../output/heatmap{}.gif".format(stub))
 
 
 def animation_from_imgs(paths, save_path):
@@ -178,7 +183,7 @@ def kernel(X, sigma):
 
 
 def lund(X, sigma, t=-1, k=-1, 
-        truncate=0.95, plot_stub="", 
+        truncate=0.95, plot_stub="", t_max=-1,
         bw=-1, animate_clustering=False, animate_time_search=True):
     W = kernel(X, sigma)
 
@@ -213,9 +218,11 @@ def lund(X, sigma, t=-1, k=-1,
     N = X.shape[0]
     ratios = []
     t = 1
-    while t < 1e14:
+    while t < t_max:
         dw, D = compute_weighted_dists(U, V, N, t, px)
         dws = -1*np.sort(-1*dw)
+        if np.all(dws == 0):
+            break 
         dws = np.clip(dws, dws[dws != 0].min(), dws.max())
         
         ratio = dws / np.roll(dws, -1)
@@ -262,6 +269,7 @@ def lund(X, sigma, t=-1, k=-1,
     counter = 0
     y_hat = np.zeros(X.shape[0])
     y_hat[ixs_dw[:k]] = np.arange(1,k+1)
+    paths = []
     for ix in ixs_px:
         if y_hat[ix] == 0:
             mask = np.logical_and(px >= px[ix], y_hat > 0)
@@ -274,26 +282,15 @@ def lund(X, sigma, t=-1, k=-1,
                 plt.scatter(X[ixs_dw[:k],0], X[ixs_dw[:k],1], 
                     marker="*", s=100, c="red")
                 plt.plot(X[[ix, ixy],0], X[[ix, ixy],1], c="cyan", lw=2)
-                plt.savefig("../temp/animate_cluster{}.png".format(counter))
+                p = "../temp/animate_cluster{}.png".format(counter)
+                paths.append(p)
+                plt.savefig(p)
                 plt.close()
             counter += 1
 
     if animate_clustering:
-        fig = plt.figure()
-        imgs = []
-        paths = filter(lambda x: "animate" in x, os.listdir("../temp"))
-        paths = sorted(paths, key=lambda x: int("".join(re.findall("\d", x))))
-        for p in paths:
-            img = plt.imread("../temp/{}".format(p))
-            imgs.append([plt.imshow(img)])
-            os.unlink("../temp/{}".format(p))
-        
-        ani = animation.ArtistAnimation(fig, imgs)
-        plt.axis("off")
-        
-        writer = animation.PillowWriter(fps=10)
-        path = "../output/animated_clustering{}.gif".format(plot_stub)
-        ani.save(path, writer=writer)
+        animation_from_imgs(
+            paths, "../output/animated_clustering{}.gif".format(plot_stub))
 
     if plot_stub != "":
         plt.scatter(X[:,0], X[:,1], c=y_hat, cmap=plt.cm.Paired)
