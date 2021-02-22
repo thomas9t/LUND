@@ -17,15 +17,31 @@ def main():
     sigma = 0.175
 
     X, y = make_circles(n_samples=300, noise=0.03, factor=0.5)
+    ixs = np.argsort(y)
+    X = X[ixs,:]
+    y = y[ixs]
     animate_diffusion(
         X, sigma, 1e8, "_circles", plot_heatmap=True, animate=True)
     lund(X, sigma, t=1e8, k=2, t_max=1e6,
         plot_stub="_circles", animate_clustering=True, amimate_time_search=True)
 
     X, y = make_blobs(n_samples=[100]*16, cluster_std=0.5)
-    
+    ixs = np.argsort(y)
+    X = X[ixs,:]
+    y = y[ixs]
+    animate_diffusion(
+        X, sigma, 1e8, "_circles", plot_heatmap=True, animate=True)
+    lund(X, sigma, t=-1, k=-1, t_max=1e12, plot_stub="_blobs",
+        animate_clustering=True, animate_time_search=True)
+
     X, y = make_bottleneck(100)
-    animate_diffusion(X, sigma, 1e14, "_bottleneck")
+    ixs = np.argsort(y)
+    X = X[ixs,:]
+    y = y[ixs]
+    animate_diffusion(
+        X, sigma, 1e14, "_bottleneck", plot_heatmap=True, animate=True)
+    lund(X, sigma, t=1e8, k=3, plot_stub="_bottleneck",
+        animate_clustering=True, animate_time_search=True)
 
 
 def plot_eigenvalue_decay(X, sigma_max, stub):
@@ -234,7 +250,7 @@ def lund(X, sigma, t=-1, k=-1,
         for t, r, k, dws in ratios:
             plt.plot(np.arange(32), dws[:32], color="darkgreen", lw=3)
             plt.title("t: {} - r: {} - k: {}".format(int(t), r, k+1))
-            p = "../temp/weighted_dists{}.png".format(int(t))
+            p = "../temp/weighted_dists{}.png".format(t)
             plt.savefig(p, bbox_inches="tight")
             paths.append(p)
             plt.close()
@@ -294,6 +310,7 @@ def lund(X, sigma, t=-1, k=-1,
 
     if plot_stub != "":
         plt.scatter(X[:,0], X[:,1], c=y_hat, cmap=plt.cm.Paired)
+        plt.title("K: {}".format(k))
         path = "../output/imputed_clusters{}.png".format(plot_stub)
         plt.savefig(path, bbox_inches="tight")
 
