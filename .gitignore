@@ -1,5 +1,7 @@
 /temp
+/input
 /src/__pycache__
 **.vscode
 **.DS_Store
 **.pyc
+/src/impages.py
