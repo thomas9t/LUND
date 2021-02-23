@@ -20,7 +20,10 @@ def main():
     ixs = np.argsort(y)
     X = X[ixs,:]
     y = y[ixs]
-    animate_diffusion(X, sigma, 1e8, "_circles")
+
+    sigmas = [0.01, 0.1, 0.5, 1.0, 2.0]
+    for s in sigmas:
+        animate_diffusion(X, s, 1e8, "_circles_s{}".format(s))
     lund(X, sigma, t=-1, k=-1, t_max=1e6,
         plot_stub="_circles_est", animate_clustering=True, animate_time_search=True)
 
@@ -47,6 +50,13 @@ def animate_diffusion(X, sigma, t_max, stub):
     W = kernel(X, sigma)
     D = np.diag(W.sum(axis=0))
     P = np.linalg.inv(D).dot(W)
+
+    plt.close()
+    plt.scatter(X[:,0], X[:,1], c=W[1,:], cmap=plt.cm.jet)
+    plt.scatter(X[1,0], X[1,1], marker="*", s=100, color="red")
+    plt.title("$\sigma = {}$".format(sigma))
+    plt.savefig("../output/kernel{}.png".format(stub), bbox_inches="tight")
+    plt.close()
 
     (U,V) = eigs_ordered( P, truncate=0.99 )
     U = np.clip(U, -1.0, 1.0)
