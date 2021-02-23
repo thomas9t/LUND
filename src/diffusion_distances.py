@@ -22,8 +22,8 @@ def main():
     y = y[ixs]
     animate_diffusion(
         X, sigma, 1e8, "_circles", plot_heatmap=True, animate=True)
-    lund(X, sigma, t=1e8, k=2, t_max=1e6,
-        plot_stub="_circles", animate_clustering=True, amimate_time_search=True)
+    lund(X, sigma, t=-1, k=-1, t_max=1e6,
+        plot_stub="_circles_est", animate_clustering=True, animate_time_search=True)
 
     X, y = make_blobs(n_samples=[100]*16, cluster_std=0.5)
     ixs = np.argsort(y)
@@ -40,9 +40,10 @@ def main():
     y = y[ixs]
     animate_diffusion(
         X, sigma, 1e14, "_bottleneck", plot_heatmap=True, animate=True)
-    lund(X, sigma, t=1e8, k=3, plot_stub="_bottleneck",
+    # lund(X, sigma, t=1e8, k=3, plot_stub="_bottleneck",
+    #     animate_clustering=True, animate_time_search=True)
+    lund(X, sigma, t=-1, k=-1, t_max=1e12, plot_stub="_bottleneck_est",
         animate_clustering=True, animate_time_search=True)
-
 
 def plot_eigenvalue_decay(X, sigma_max, stub):
     sigma_grid = np.linspace(1,sigma_max)
