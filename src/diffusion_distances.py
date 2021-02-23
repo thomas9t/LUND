@@ -20,8 +20,7 @@ def main():
     ixs = np.argsort(y)
     X = X[ixs,:]
     y = y[ixs]
-    animate_diffusion(
-        X, sigma, 1e8, "_circles", plot_heatmap=True, animate=True)
+    animate_diffusion(X, sigma, 1e8, "_circles")
     lund(X, sigma, t=-1, k=-1, t_max=1e6,
         plot_stub="_circles_est", animate_clustering=True, animate_time_search=True)
 
@@ -29,8 +28,7 @@ def main():
     ixs = np.argsort(y)
     X = X[ixs,:]
     y = y[ixs]
-    animate_diffusion(
-        X, sigma, 1e8, "_circles", plot_heatmap=True, animate=True)
+    animate_diffusion(X, sigma, 1e8, "_circles")
     lund(X, sigma, t=-1, k=-1, t_max=1e12, plot_stub="_blobs",
         animate_clustering=True, animate_time_search=True)
 
@@ -38,34 +36,14 @@ def main():
     ixs = np.argsort(y)
     X = X[ixs,:]
     y = y[ixs]
-    animate_diffusion(
-        X, sigma, 1e14, "_bottleneck", plot_heatmap=True, animate=True)
+    animate_diffusion(X, sigma, 1e14, "_bottleneck")
     # lund(X, sigma, t=1e8, k=3, plot_stub="_bottleneck",
     #     animate_clustering=True, animate_time_search=True)
     lund(X, sigma, t=-1, k=-1, t_max=1e12, plot_stub="_bottleneck_est",
         animate_clustering=True, animate_time_search=True)
 
-def plot_eigenvalue_decay(X, sigma_max, stub):
-    sigma_grid = np.linspace(1,sigma_max)
-    paths = []
-    for s in sigma_grid:
-        W = kernel(X, s)
-        D = np.diag(W.sum(axis=0))
-        P = np.linalg.inv(D).dot(W)
 
-        (U,V) = eigs_ordered( P, truncate=0.99 )
-        U = np.clip(U, -1.0, 1.0)
-        plt.scatter(np.arange(U.size), U)
-        plt.title("Sigma: {} - gap: {}".format(s, U[0] / U[1]))
-        path = "../temp/decay{}.png".format(s)
-        plt.savefig(path)
-        paths.append(path)
-        plt.close()
-
-    animation_from_imgs(paths, "../output/eigen_decay{}.gif".format(stub))
-
-
-def animate_diffusion(X, sigma, t_max, stub, plot_heatmap=False, animate=False):
+def animate_diffusion(X, sigma, t_max, stub):
     W = kernel(X, sigma)
     D = np.diag(W.sum(axis=0))
     P = np.linalg.inv(D).dot(W)
@@ -98,23 +76,20 @@ def animate_diffusion(X, sigma, t_max, stub, plot_heatmap=False, animate=False):
         plt.savefig(p, bbox_inches="tight")
         plt.close()
 
-        if plot_heatmap:
-            plt.imshow(D, cmap="viridis")
-            plt.title("$t = 10^{{{:.3f}}}$".format(np.log10(t)))
-            p = "../temp/heatmap{:.3f}.png".format(t)
-            plt.savefig(p, bbox_inches="tight")
-            heatmap_paths.append(p)
-            plt.close()
+        plt.imshow(D, cmap="viridis")
+        plt.title("$t = 10^{{{:.3f}}}$".format(np.log10(t)))
+        p = "../temp/heatmap{:.3f}.png".format(t)
+        plt.savefig(p, bbox_inches="tight")
+        heatmap_paths.append(p)
+        plt.close()
         
         t *= 1.5
 
-    if animate:
-        animation_from_imgs(
-            scatter_paths, "../output/diffusion{}.gif".format(stub))
+    animation_from_imgs(
+        scatter_paths, "../output/diffusion{}.gif".format(stub))
 
-        if plot_heatmap:
-            animation_from_imgs(
-                heatmap_paths, "../output/heatmap{}.gif".format(stub))
+    animation_from_imgs(
+        heatmap_paths, "../output/heatmap{}.gif".format(stub))
 
 
 def animation_from_imgs(paths, save_path):
