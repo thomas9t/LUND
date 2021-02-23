@@ -204,6 +204,7 @@ def lund(X, sigma, t=-1, k=-1,
     W = kernel(X, sigma)
 
     if plot_stub != "":
+        plt.close()
         plt.scatter(X[:,0], X[:,1], c=W[:,1], cmap=plt.cm.jet)
         plt.scatter(X[1,0], X[1,1], marker="*", s=100, c="red")
         plt.colorbar()
@@ -221,6 +222,7 @@ def lund(X, sigma, t=-1, k=-1,
     px  = np.exp(KDE.score_samples(X))
 
     if plot_stub != "":
+        plt.close()
         plt.scatter(X[:,0], X[:,1], c=px, cmap=plt.cm.jet)
         plt.colorbar()
         path = "../output/kde{}.png".format(plot_stub)
@@ -248,13 +250,14 @@ def lund(X, sigma, t=-1, k=-1,
     if animate_time_search:
         paths = []
         for t, r, k, dws in ratios:
+            plt.close()
             plt.plot(np.arange(32), dws[:32], color="darkgreen", lw=3)
             plt.title("t: {} - r: {} - k: {}".format(int(t), r, k+1))
             p = "../temp/weighted_dists{}.png".format(t)
             plt.savefig(p, bbox_inches="tight")
             paths.append(p)
-            plt.close()
 
+        plt.close()
         animation_from_imgs(
             paths, "../output/weighted_dists{}.gif".format(plot_stub))
 
@@ -269,18 +272,18 @@ def lund(X, sigma, t=-1, k=-1,
     ixs_dw = np.argsort(-1*dw)
     ixs_px = np.argsort(-1*px)
     if plot_stub != "":
+        plt.close()
         plt.bar(np.arange(10*k), dw[ixs_dw][:10*k], color="darkgreen")
         plt.yscale("log")
         plt.ylabel("$D_{{t}}(x)$")
         path = "../output/weighted_dist_scatter{}.png".format(plot_stub)
         plt.savefig(path, bbox_inches="tight")
+        
         plt.close()
-
         plt.scatter(X[:,0], X[:,1])
         plt.scatter(X[ixs_dw[:k],0], X[ixs_dw[:k],1], marker="*", s=100, c="red")
         path = "../output/weighted_dists{}.png".format(plot_stub)
         plt.savefig(path, bbox_inches="tight")
-        plt.close()
 
     counter = 0
     y_hat = np.zeros(X.shape[0])
@@ -294,6 +297,7 @@ def lund(X, sigma, t=-1, k=-1,
             ixy = np.where(mask)[0][ixl]
             y_hat[ix] = y_hat[ixy]
             if animate_clustering & (counter % 5 == 0):
+                plt.close()
                 plt.scatter(X[:,0], X[:,1], c=y_hat, cmap=plt.cm.Paired)
                 plt.scatter(X[ixs_dw[:k],0], X[ixs_dw[:k],1], 
                     marker="*", s=100, c="red")
@@ -301,14 +305,15 @@ def lund(X, sigma, t=-1, k=-1,
                 p = "../temp/animate_cluster{}.png".format(counter)
                 paths.append(p)
                 plt.savefig(p)
-                plt.close()
             counter += 1
 
     if animate_clustering:
+        plt.close()
         animation_from_imgs(
             paths, "../output/animated_clustering{}.gif".format(plot_stub))
 
     if plot_stub != "":
+        plt.close()
         plt.scatter(X[:,0], X[:,1], c=y_hat, cmap=plt.cm.Paired)
         plt.title("K: {}".format(k))
         path = "../output/imputed_clusters{}.png".format(plot_stub)
